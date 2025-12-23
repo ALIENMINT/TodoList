@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智能清单 Pro - 精准逻辑版</title>
+    <title>智能清单 Pro - 逻辑精修版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
@@ -12,21 +12,21 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background: #f4f7f9; touch-action: pan-y; }
         
-        .user-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 12px 20px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .user-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 12px 20px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .swiper { width: 100%; padding: 80px 0 40px 0; }
         
         .swiper-slide { 
             background: #fff; border-radius: 28px; width: 85%; max-width: 400px; height: 72vh; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.4s; overflow: hidden; display: flex; flex-direction: column;
         }
-        .swiper-slide-active { transform: scale(1.02); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.12); }
+        .swiper-slide-active { transform: scale(1.02); }
         
         /* 状态颜色 */
         .card-header { padding: 20px; color: white; transition: background 0.4s ease; }
         .header-past { background: #cbd5e1; }    /* 过去：淡灰 */
         .header-today { background: #10b981; }   /* 今天：绿色 */
         .header-future { background: #3b82f6; }  /* 未来：蓝色 */
-        .header-critical { background: #ef4444 !important; } /* 关键任务日：红色 */
+        .header-critical { background: #ef4444 !important; } /* 仅一次性任务当天：红色 */
         
         /* 任务行样式 */
         .task-item { 
@@ -34,10 +34,10 @@
             display: flex; align-items: center; gap: 12px; border: 1px solid #f1f5f9;
             transition: all 0.2s;
         }
-        /* 禁用状态：灰色、半透明、不可点击 */
-        .task-disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; background: #f8fafc; border-style: dashed; }
+        /* 禁用状态：用于提前显示的预览任务 */
+        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; background: #fcfcfc; border-style: dashed; }
         
-        .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer; }
+        .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .checkbox-custom.checked { background: #10b981; border-color: #10b981; }
         .checkbox-custom i { color: white; font-size: 10px; display: none; }
         .checkbox-custom.checked i { display: block; }
@@ -45,33 +45,38 @@
         #input-modal { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); }
         .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; }
 
-        /* 时间选择增强 */
-        .jump-container { display: flex; align-items: center; background: #f1f5f9; padding: 6px 12px; border-radius: 12px; gap: 8px; color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; }
-        #jump-date { border: none; background: transparent; font-family: inherit; outline: none; cursor: pointer; color: #1e293b; }
+        /* 跳转引导样式 */
+        .jump-box { display: flex; align-items: center; background: #f1f5f9; padding: 6px 12px; border-radius: 10px; gap: 6px; color: #475569; transition: all 0.2s; }
+        .jump-box:hover { background: #e2e8f0; }
+        .jump-box label { font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        #jump-date { border: none; background: transparent; font-size: 12px; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; width: 105px; }
     </style>
 </head>
 <body>
 
     <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-10 rounded-3xl shadow-xl max-w-sm w-full text-center">
-            <h2 class="text-3xl font-bold mb-8 text-slate-800">云端清单 Pro</h2>
-            <button onclick="login()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold">Google 登录</button>
+            <h2 class="text-3xl font-bold mb-8">云端清单 Pro</h2>
+            <button onclick="login()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Google 快速登录</button>
         </div>
     </div>
 
     <div id="app-screen" class="hidden">
         <div class="user-bar">
             <div class="flex items-center gap-2">
-                <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-slate-200">
-                <span id="user-name" class="text-xs font-bold text-slate-600 truncate max-w-[80px]">...</span>
+                <img id="user-avatar" src="" class="w-8 h-8 rounded-full border border-slate-100">
+                <span id="user-name" class="text-xs font-bold text-slate-600 truncate max-w-[70px]">...</span>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="jump-container">
-                    <i class="far fa-calendar-alt"></i>
-                    <span>跳转至</span>
+            
+            <div class="flex items-center gap-2">
+                <div class="jump-box">
+                    <i class="fas fa-calendar-day text-[10px] opacity-50"></i>
+                    <label for="jump-date text-blue-500">跳转日期:</label>
                     <input type="date" id="jump-date" onchange="jumpToDate(this.value)">
                 </div>
-                <button onclick="logout()" class="w-8 h-8 flex items-center justify-center text-slate-400"><i class="fas fa-power-off"></i></button>
+                <button onclick="confirmLogout()" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </div>
 
@@ -83,8 +88,8 @@
 
     <div id="input-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
-            <h3 class="text-xl font-bold mb-6 text-slate-800">添加新计划</h3>
-            <input type="text" id="task-input" placeholder="输入任务内容..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6 border-2 border-transparent focus:border-blue-500">
+            <h3 class="text-xl font-bold mb-6 text-slate-800">新任务</h3>
+            <input type="text" id="task-input" placeholder="写下你的计划..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6 border-2 border-transparent focus:border-blue-500">
             <div class="flex gap-2 mb-8">
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="once" checked class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-red-500 peer-checked:text-white text-xs font-bold transition-all">一次性</div></label>
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="daily" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-green-600 peer-checked:text-white text-xs font-bold transition-all">每日</div></label>
@@ -92,7 +97,7 @@
             </div>
             <div class="flex gap-4">
                 <button onclick="closeModal()" class="flex-1 text-slate-400 font-bold">取消</button>
-                <button onclick="addTask()" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold">确认添加</button>
+                <button onclick="addTask()" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold">添加</button>
             </div>
         </div>
     </div>
@@ -120,19 +125,21 @@
         let currentUser = null, swiper = null, allTasks = [];
         const todayStr = new Date().toISOString().split('T')[0];
         
-        // 生成 120 天范围
         const cardDates = [];
-        for(let i = -30; i <= 90; i++) {
+        for(let i = -10; i <= 90; i++) {
             const d = new Date(); d.setDate(d.getDate() + i);
             cardDates.push(d.toISOString().split('T')[0]);
         }
 
         window.login = () => signInWithPopup(auth, provider);
-        window.logout = () => signOut(auth).then(() => location.reload());
-        window.openModal = () => {
-            document.getElementById('input-modal').style.display = 'flex';
-            document.getElementById('task-input').focus();
+        
+        window.confirmLogout = () => {
+            if(confirm("确定要退出登录吗？")) {
+                signOut(auth).then(() => location.reload());
+            }
         };
+
+        window.openModal = () => document.getElementById('input-modal').style.display = 'flex';
         window.closeModal = () => document.getElementById('input-modal').style.display = 'none';
         window.jumpToDate = (val) => {
             const idx = cardDates.indexOf(val);
@@ -178,8 +185,7 @@
         }
 
         function getDayName(dateStr) {
-            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            return days[new Date(dateStr).getDay()];
+            return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long' });
         }
 
         window.addTask = async () => {
@@ -208,30 +214,38 @@
                 const header = document.getElementById(`header-${date}`);
                 if (!container || !header) return;
 
+                const currentTimestamp = new Date(date).getTime();
                 const currentDayOfWeek = new Date(date).getDay();
 
-                // 筛选逻辑：一次性任务提前显示预览，周期任务从起始日后开始显示
+                // 筛选逻辑
                 const dayTasks = allTasks.filter(t => {
-                    if (t.type === 'once') return date <= t.targetDate; // 提前显示预览
-                    return date >= t.targetDate; // 每日和每周从起始日开始
+                    if (t.type === 'once') return date <= t.targetDate; // 一次性任务提前预览
+                    return date >= t.targetDate; // 每日/每周从起始日开始显示
                 });
 
-                // --- 逻辑判断核心 ---
-                let hasActiveCriticalTask = false;
+                // 规则 1：只有“一次性任务”在当天的，顶栏才变红
+                const hasActiveOnceTask = dayTasks.some(t => t.type === 'once' && date === t.targetDate);
 
                 const html = dayTasks.map(t => {
                     let isActive = false;
+                    let countdownText = "";
+
                     if (t.type === 'once') {
                         isActive = (date === t.targetDate);
+                        if (!isActive) {
+                            // 计算“X天后”
+                            const diff = Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000);
+                            countdownText = `${diff}天后`;
+                        }
                     } else if (t.type === 'weekly') {
-                        const targetDayOfWeek = new Date(t.targetDate).getDay();
-                        isActive = (currentDayOfWeek === targetDayOfWeek);
+                        const targetW = new Date(t.targetDate).getDay();
+                        isActive = (currentDayOfWeek === targetW);
+                        if (!isActive) {
+                            const diff = (targetW - currentDayOfWeek + 7) % 7;
+                            countdownText = `${diff}天后`;
+                        }
                     } else if (t.type === 'daily') {
                         isActive = true;
-                    }
-
-                    if (isActive && (t.type === 'once' || t.type === 'weekly')) {
-                        hasActiveCriticalTask = true;
                     }
 
                     const done = t.completedDates?.includes(date);
@@ -247,7 +261,7 @@
                                 <p class="text-sm ${done ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">
                                     ${t.text}
                                 </p>
-                                ${!isActive ? `<span class="text-[9px] text-slate-400 font-bold uppercase">锁定 / 预览</span>` : ''}
+                                ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdownText}</span>` : ''}
                             </div>
                         </div>
                     `;
@@ -255,12 +269,12 @@
 
                 container.innerHTML = html;
 
-                // 刷新顶栏颜色
+                // 颜色逻辑应用
                 let baseColor = "header-future";
                 if (date < todayStr) baseColor = "header-past";
                 else if (date === todayStr) baseColor = "header-today";
 
-                header.className = `card-header ${hasActiveCriticalTask ? 'header-critical' : baseColor}`;
+                header.className = `card-header ${hasActiveOnceTask ? 'header-critical' : baseColor}`;
             });
         }
     </script>
