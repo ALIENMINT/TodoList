@@ -7,11 +7,10 @@ import {
     updateProfile
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// 1. 初始化入口
+// 初始化：在主界面注入入口
 const initEmailEntry = () => {
     const loginBox = document.querySelector('#login-screen .bg-white');
-    if (!loginBox) return;
-    if (document.getElementById('email-entry-btn')) return;
+    if (!loginBox || document.getElementById('email-entry-btn')) return;
 
     const entryBtn = document.createElement('button');
     entryBtn.id = 'email-entry-btn';
@@ -22,70 +21,83 @@ const initEmailEntry = () => {
     loginBox.appendChild(entryBtn);
 };
 
-// 2. 显示表单
+// 显示表单界面
 const showEmailForm = (container) => {
-    const originalContent = container.innerHTML;
     container.innerHTML = `
-        <div class="text-left">
+        <div class="text-left animate-in fade-in duration-300">
             <button id="auth-back" class="text-slate-400 mb-6 flex items-center gap-1 text-sm font-bold">
                 <i class="fas fa-arrow-left"></i> 返回
             </button>
             <h3 class="text-xl font-bold mb-6 text-slate-800">邮箱登录 / 注册</h3>
+            
             <div class="space-y-4">
                 <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-transparent focus:border-blue-500 transition-all">
                 <input type="password" id="auth-password" placeholder="Password" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border border-transparent focus:border-blue-500 transition-all">
             </div>
-            <button id="btn-login" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold mt-8 shadow-lg active:scale-95 transition-all">立即登录</button>
+
+            <button id="btn-login" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold mt-8 shadow-lg active:scale-95 transition-all">
+                立即登录
+            </button>
+            
             <div class="mt-6 text-center">
-                <button id="btn-register" class="text-sm font-bold text-blue-600 hover:underline">没有账号？立即注册验证</button>
+                <button id="btn-register" class="text-sm font-bold text-blue-600 hover:underline">
+                    没有账号？立即注册验证
+                </button>
             </div>
+            <p id="auth-msg" class="mt-4 text-xs text-center font-medium hidden"></p>
         </div>
     `;
 
-    document.getElementById('auth-back').onclick = () => {
-        location.reload(); // 简单重载以恢复初始状态
-    };
-
+    document.getElementById('auth-back').onclick = () => location.reload();
     document.getElementById('btn-register').onclick = handleRegister;
     document.getElementById('btn-login').onclick = handleLogin;
 };
 
-// --- 核心逻辑：解决注册即登录 & 默认头像问题 ---
-
+// 核心改进逻辑
 async function handleRegister() {
     const auth = getAuth();
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
-    
+    const msgEl = document.getElementById('auth-msg');
+
     if (!email || password.length < 6) {
         alert("请输入有效的邮箱，且密码不少于6位");
         return;
     }
 
     try {
+        // 1. 设置头像 API
+        const initial = email.charAt(0).toUpperCase();
+        const defaultAvatar = `https://ui-avatars.com/api/?name=${initial}&background=random&color=fff&size=128`;
+
+        // 2. 创建用户
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // 1. 设置默认头像（使用 UI Avatars 生成首字母头像）
-        const initial = email.charAt(0).toUpperCase();
-        const defaultAvatar = `https://ui-avatars.com/api/?name=${initial}&background=random&color=fff&size=128`;
-        
+        // 3. 更新资料（设置首字母头像）
         await updateProfile(user, {
-            displayName: email.split('@')[0], // 默认用户名为邮箱前缀
+            displayName: email.split('@')[0],
             photoURL: defaultAvatar
         });
 
-        // 2. 发送验证邮件
+        // 4. 发送验证邮件
         await sendEmailVerification(user);
 
-        // 3. 强制退出登录 (防止直接进入系统)
+        // 【关键步骤】立刻退出登录，防止主 HTML 脚本把页面切走
         await signOut(auth);
 
-        alert("注册成功！验证邮件已发送。请点击邮件中的链接完成验证后，再次在登录页进行登录。");
-        location.reload(); // 返回主登录页
+        // 5. UI 反馈
+        msgEl.innerText = "验证邮件已发送至您的邮箱，请验证后再登录。";
+        msgEl.className = "mt-4 text-xs text-center font-medium text-green-600 block";
+        document.getElementById('auth-email').value = "";
+        document.getElementById('auth-password').value = "";
         
+        alert("注册成功！请前往邮箱点击验证链接，完成后再返回此处登录。");
+
     } catch (error) {
-        alert("注册失败: " + error.message);
+        let errorMsg = "注册失败";
+        if (error.code === 'auth/email-already-in-use') errorMsg = "该邮箱已被注册";
+        alert(errorMsg + ": " + error.message);
     }
 }
 
@@ -96,18 +108,22 @@ async function handleLogin() {
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        // 检查是否验证了邮箱
-        if (!userCredential.user.emailVerified) {
-            alert("请先前往邮箱完成验证链接，否则无法登录。");
-            await signOut(auth); // 未验证则强制踢出
+        const user = userCredential.user;
+
+        // 【拦截逻辑】如果没验证邮箱，强制踢出
+        if (!user.emailVerified) {
+            alert("您的邮箱尚未验证，请点击邮件中的链接。");
+            await signOut(auth); // 踢回登录状态
             return;
         }
+
+        // 验证通过，不做任何操作，主 HTML 的 onAuthStateChanged 会带你进 App
     } catch (error) {
-        alert("登录失败: 邮箱或密码错误");
+        alert("登录失败：邮箱或密码错误");
     }
 }
 
-// 启动
+// 启动执行
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initEmailEntry);
 } else {
