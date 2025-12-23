@@ -1,321 +1,269 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智能清单 Pro - 成就勋章版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f4f7f9; }
-        
-        .user-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 12px 20px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .swiper { width: 100%; padding: 80px 0 40px 0; height: 100vh; }
-        
-        .swiper-slide { 
-            background: #fff; border-radius: 28px; width: 85%; max-width: 400px; height: 75vh; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.4s; overflow: hidden; display: flex; flex-direction: column;
-        }
-        
-        .card-header { padding: 20px; color: white; transition: all 0.5s ease; position: relative; }
-        .header-past { background: #cbd5e1; }
-        .header-today { background: #10b981; }
-        .header-future { background: #3b82f6; }
-        .header-critical { background: #ef4444 !important; }
-        
-        .header-perfect { 
-            background: linear-gradient(135deg, #a67c00 0%, #bf9b30 50%, #8a6d1c 100%) !important;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
-        }
-        .header-perfect::after {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.15; background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 8px 8px;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>智能清单 Pro - 成就勋章版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f4f7f9; touch-action: pan-y; }
+        
+        .user-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 12px 20px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .swiper { width: 100%; padding: 80px 0 40px 0; }
+        
+        .swiper-slide { 
+            background: #fff; border-radius: 28px; width: 85%; max-width: 400px; height: 72vh; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.4s; overflow: hidden; display: flex; flex-direction: column;
+        }
+        
+        /* 状态颜色 */
+        .card-header { padding: 20px; color: white; transition: all 0.5s ease; position: relative; }
+        .header-past { background: #cbd5e1; }    /* 过去：淡灰 */
+        .header-today { background: #10b981; }   /* 今天：绿色 */
+        .header-future { background: #3b82f6; }  /* 未来：蓝色 */
+        .header-critical { background: #ef4444 !important; } /* 一次性任务：红色 */
+        
+        /* --- 新增：暗金色完美达成样式 --- */
+        .header-perfect { 
+            background: linear-gradient(135deg, #a67c00 0%, #bf9b30 50%, #8a6d1c 100%) !important;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
+        }
+        /* 金色纹理叠加层 */
+        .header-perfect::after {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.15;
+            background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
+            background-size: 8px 8px;
+        }
 
-        .task-list-container { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
-        .task-item { 
-            background: white; border-radius: 14px; margin-bottom: 10px; padding: 14px;
-            display: flex; align-items: center; gap: 12px; border: 1px solid #f1f5f9;
-        }
+        .task-item { 
+            background: white; border-radius: 14px; margin-bottom: 10px; padding: 14px;
+            display: flex; align-items: center; gap: 12px; border: 1px solid #f1f5f9;
+        }
+        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; background: #fcfcfc; border-style: dashed; }
+        
+        .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .checkbox-custom.checked { background: #10b981; border-color: #10b981; }
+        .checkbox-custom i { color: white; font-size: 10px; display: none; }
+        .checkbox-custom.checked i { display: block; }
+        
+        #input-modal { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; }
 
-        /* 4. 一次性任务行在当天的强调 */
-        .task-highlight-once {
-            border: 2px solid #ef4444 !important;
-            background: #fff5f5 !important;
-            animation: pulse-red 2s infinite;
-        }
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; background: #fcfcfc; border-style: dashed; }
-        
-        .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .checkbox-custom.checked { background: #10b981; border-color: #10b981; }
-        .checkbox-custom i { color: white; font-size: 10px; display: none; }
-        .checkbox-custom.checked i { display: block; }
-        
-        #input-modal { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; transition: 0.3s; }
-        .fab-disabled { background: #cbd5e1; transform: scale(0.8); pointer-events: none; }
-
-        .jump-box { display: flex; align-items: center; background: #f1f5f9; padding: 6px 12px; border-radius: 10px; gap: 6px; }
-        #jump-date { border: none; background: transparent; font-size: 12px; font-weight: 600; outline: none; width: 105px; }
-        
-        .sortable-ghost { opacity: 0.3; background: #e2e8f0; }
-    </style>
+        .jump-box { display: flex; align-items: center; background: #f1f5f9; padding: 6px 12px; border-radius: 10px; gap: 6px; }
+        #jump-date { border: none; background: transparent; font-size: 12px; font-weight: 600; outline: none; width: 105px; }
+    </style>
 </head>
 <body>
 
-    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white p-10 rounded-3xl shadow-xl max-w-sm w-full text-center">
-            <h2 class="text-3xl font-bold mb-8 text-slate-800">云端清单 Pro</h2>
-            <button onclick="login()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Google 登录</button>
-        </div>
-    </div>
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-10 rounded-3xl shadow-xl max-w-sm w-full text-center">
+            <h2 class="text-3xl font-bold mb-8 text-slate-800">云端清单 Pro</h2>
+            <button onclick="login()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Google 登录</button>
+        </div>
+    </div>
 
-    <div id="app-screen" class="hidden">
-        <div class="user-bar">
-            <div class="flex items-center gap-2">
-                <img id="user-avatar" src="" class="w-8 h-8 rounded-full">
-                <span id="user-name" class="text-xs font-bold text-slate-600 truncate max-w-[70px]">...</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="jump-box">
-                    <label for="jump-date" class="text-[10px] font-bold text-blue-600">跳转:</label>
-                    <input type="date" id="jump-date" onchange="jumpToDate(this.value)">
-                </div>
-                <button onclick="confirmLogout()" class="w-8 h-8 flex items-center justify-center text-slate-400"><i class="fas fa-power-off"></i></button>
-            </div>
-        </div>
+    <div id="app-screen" class="hidden">
+        <div class="user-bar">
+            <div class="flex items-center gap-2">
+                <img id="user-avatar" src="" class="w-8 h-8 rounded-full">
+                <span id="user-name" class="text-xs font-bold text-slate-600 truncate max-w-[70px]">...</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div class="jump-box">
+                    <label for="jump-date" class="text-[10px] font-bold text-blue-600">跳转:</label>
+                    <input type="date" id="jump-date" onchange="jumpToDate(this.value)">
+                </div>
+                <button onclick="confirmLogout()" class="w-8 h-8 flex items-center justify-center text-slate-400"><i class="fas fa-power-off"></i></button>
+            </div>
+        </div>
 
-        <div class="swiper mySwiper">
-            <div class="swiper-wrapper" id="card-wrapper"></div>
-        </div>
-        <button id="add-btn" onclick="openModal()" class="fab"><i class="fas fa-plus"></i></button>
-    </div>
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper" id="card-wrapper"></div>
+        </div>
+        <button onclick="openModal()" class="fab"><i class="fas fa-plus"></i></button>
+    </div>
 
-    <div id="input-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
-            <h3 class="text-xl font-bold mb-6 text-slate-800">新任务</h3>
-            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6">
-            <div class="flex gap-2 mb-8">
-                <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="once" checked class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-red-500 peer-checked:text-white text-xs font-bold">一次性</div></label>
-                <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="daily" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-green-600 peer-checked:text-white text-xs font-bold">每日</div></label>
-                <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="weekly" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-blue-600 peer-checked:text-white text-xs font-bold">每周</div></label>
-            </div>
-            <div class="flex gap-4">
-                <button onclick="closeModal()" class="flex-1 text-slate-400 font-bold">取消</button>
-                <button onclick="addTask()" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold">确认</button>
-            </div>
-        </div>
-    </div>
+    <div id="input-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
+            <h3 class="text-xl font-bold mb-6 text-slate-800">新任务</h3>
+            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6">
+            <div class="flex gap-2 mb-8">
+                <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="once" checked class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-red-500 peer-checked:text-white text-xs font-bold">一次性</div></label>
+                <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="daily" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-green-600 peer-checked:text-white text-xs font-bold">每日</div></label>
+                <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="weekly" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-blue-600 peer-checked:text-white text-xs font-bold">每周</div></label>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="closeModal()" class="flex-1 text-slate-400 font-bold">取消</button>
+                <button onclick="addTask()" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold">确认</button>
+            </div>
+        </div>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAY2JHi7EK-w2J-or7L28geJfnhQRj51cw",
-            authDomain: "mytodoapp-8e830.firebaseapp.com",
-            projectId: "mytodoapp-8e830",
-            storageBucket: "mytodoapp-8e830.firebasestorage.app",
-            messagingSenderId: "484535488942",
-            appId: "1:484535488942:web:01f66d0da5bc2da6b9f83f"
-        };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAY2JHi7EK-w2J-or7L28geJfnhQRj51cw",
+            authDomain: "mytodoapp-8e830.firebaseapp.com",
+            projectId: "mytodoapp-8e830",
+            storageBucket: "mytodoapp-8e830.firebasestorage.app",
+            messagingSenderId: "484535488942",
+            appId: "1:484535488942:web:01f66d0da5bc2da6b9f83f"
+        };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
-        let currentUser = null, swiper = null, allTasks = [];
-        // 使用本地日期格式防止时区错误
-        const todayStr = new Date().toLocaleDateString('sv-SE'); 
-        
-        const cardDates = [];
-        for(let i = -15; i <= 60; i++) {
-            const d = new Date(); d.setDate(d.getDate() + i);
-            cardDates.push(d.toLocaleDateString('sv-SE'));
-        }
+        let currentUser = null, swiper = null, allTasks = [];
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        const cardDates = [];
+        for(let i = -15; i <= 60; i++) {
+            const d = new Date(); d.setDate(d.getDate() + i);
+            cardDates.push(d.toISOString().split('T')[0]);
+        }
 
-        window.login = () => signInWithPopup(auth, provider);
-        window.confirmLogout = () => confirm("确定退出？") && signOut(auth).then(() => location.reload());
-        
-        window.openModal = () => {
-            const activeDate = cardDates[swiper.activeIndex];
-            if (activeDate < todayStr) {
-                alert("过去的天数不允许添加任务");
-                return;
-            }
-            document.getElementById('input-modal').style.display = 'flex';
-        };
+        window.login = () => signInWithPopup(auth, provider);
+        window.confirmLogout = () => confirm("确定退出？") && signOut(auth).then(() => location.reload());
+        window.openModal = () => document.getElementById('input-modal').style.display = 'flex';
+        window.closeModal = () => document.getElementById('input-modal').style.display = 'none';
+        window.jumpToDate = (val) => { const idx = cardDates.indexOf(val); if(idx !== -1) swiper.slideTo(idx); };
 
-        window.closeModal = () => document.getElementById('input-modal').style.display = 'none';
-        window.jumpToDate = (val) => { const idx = cardDates.indexOf(val); if(idx !== -1) swiper.slideTo(idx); };
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-avatar').src = user.photoURL;
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                initApp();
+            }
+        });
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('user-avatar').src = user.photoURL;
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                initApp();
-            }
-        });
+        function initApp() {
+            const wrapper = document.getElementById('card-wrapper');
+            wrapper.innerHTML = cardDates.map(date => `
+                <div class="swiper-slide" data-date="${date}">
+                    <div id="header-${date}" class="card-header header-future">
+                        <div class="text-[10px] opacity-70 font-bold tracking-widest uppercase text-center">${date === todayStr ? 'TODAY' : getDay(date)}</div>
+                        <div class="text-xl font-bold text-center">${date}</div>
+                    </div>
+                    <div id="list-${date}" class="task-list-container"></div>
+                </div>
+            `).join('');
 
-        function initApp() {
-            const wrapper = document.getElementById('card-wrapper');
-            wrapper.innerHTML = cardDates.map(date => `
-                <div class="swiper-slide" data-date="${date}">
-                    <div id="header-${date}" class="card-header header-future">
-                        <div class="text-[10px] opacity-70 font-bold tracking-widest uppercase text-center">${date === todayStr ? 'TODAY' : getDay(date)}</div>
-                        <div class="text-xl font-bold text-center">${date}</div>
-                    </div>
-                    <div id="list-${date}" class="task-list-container"></div>
-                </div>
-            `).join('');
+            swiper = new Swiper(".mySwiper", {
+                effect: "coverflow", centeredSlides: true, slidesPerView: "auto",
+                initialSlide: cardDates.indexOf(todayStr),
+                coverflowEffect: { rotate: 0, depth: 100, modifier: 2.5 },
+                on: { slideChange: renderAllCards }
+            });
 
-            // 修复 Swiper 冲突设置
-            swiper = new Swiper(".mySwiper", {
-                effect: "coverflow", 
-                centeredSlides: true, 
-                slidesPerView: "auto",
-                initialSlide: cardDates.indexOf(todayStr),
-                coverflowEffect: { rotate: 0, depth: 100, modifier: 2.5 },
-                touchStartPreventDefault: false, // 重要：允许触摸穿透到 SortableJS
-                on: { 
-                    slideChange: () => {
-                        const isPast = cardDates[swiper.activeIndex] < todayStr;
-                        document.getElementById('add-btn').classList.toggle('fab-disabled', isPast);
-                        renderAllCards();
-                    } 
-                }
-            });
+            onSnapshot(query(collection(db, "users", currentUser.uid, "tasks"), orderBy("order", "asc")), (snap) => {
+                allTasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAllCards();
+            });
+        }
 
-            onSnapshot(query(collection(db, "users", currentUser.uid, "tasks"), orderBy("order", "asc")), (snap) => {
-                allTasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderAllCards();
-            });
-        }
+        function getDay(d) { return new Date(d).toLocaleDateString('en-US', { weekday: 'short' }); }
 
-        function getDay(d) { return new Date(d).toLocaleDateString('en-US', { weekday: 'short' }); }
+        window.addTask = async () => {
+            const text = document.getElementById('task-input').value;
+            const type = document.querySelector('input[name="tType"]:checked').value;
+            const date = cardDates[swiper.activeIndex];
+            if (!text) return;
+            await addDoc(collection(db, "users", currentUser.uid, "tasks"), {
+                text, type, targetDate: date, completedDates: [], order: Date.now()
+            });
+            document.getElementById('task-input').value = ""; closeModal();
+        };
 
-        window.addTask = async () => {
-            const text = document.getElementById('task-input').value;
-            const type = document.querySelector('input[name="tType"]:checked').value;
-            const date = cardDates[swiper.activeIndex];
-            if (!text || date < todayStr) return;
-            await addDoc(collection(db, "users", currentUser.uid, "tasks"), {
-                text, type, targetDate: date, completedDates: [], order: Date.now()
-            });
-            document.getElementById('task-input').value = ""; closeModal();
-        };
+        window.toggleTask = async (id, date) => {
+            const task = allTasks.find(t => t.id === id);
+            let dates = [...(task.completedDates || [])];
+            const idx = dates.indexOf(date);
+            if (idx > -1) dates.splice(idx, 1); else dates.push(date);
+            await updateDoc(doc(db, "users", currentUser.uid, "tasks", id), { completedDates: dates });
+        };
 
-        window.toggleTask = async (id, date) => {
-            if (date < todayStr) return; // 3. 过去不运行修改
-            const task = allTasks.find(t => t.id === id);
-            let dates = [...(task.completedDates || [])];
-            const idx = dates.indexOf(date);
-            if (idx > -1) dates.splice(idx, 1); else dates.push(date);
-            await updateDoc(doc(db, "users", currentUser.uid, "tasks", id), { completedDates: dates });
-        };
+        function renderAllCards() {
+            cardDates.forEach(date => {
+                const container = document.getElementById(`list-${date}`);
+                const header = document.getElementById(`header-${date}`);
+                if (!container || !header) return;
 
-        // 1. 删除功能实现
-        window.deleteTask = async (id, date) => {
-            if (date < todayStr) return;
-            if (confirm("确定删除吗？")) {
-                await deleteDoc(doc(db, "users", currentUser.uid, "tasks", id));
-            }
-        };
+                const dayOfWeek = new Date(date).getDay();
+                const dayTasks = allTasks.filter(t => t.type === 'once' ? date <= t.targetDate : date >= t.targetDate);
 
-        function renderAllCards() {
-            cardDates.forEach(date => {
-                const container = document.getElementById(`list-${date}`);
-                const header = document.getElementById(`header-${date}`);
-                if (!container || !header) return;
+                let hasActiveOnce = false;
+                let activeTaskCount = 0;
+                let completedActiveCount = 0;
 
-                const dayOfWeek = new Date(date).getDay();
-                const dayTasks = allTasks.filter(t => t.type === 'once' ? date <= t.targetDate : date >= t.targetDate);
-                const isPastDate = date < todayStr;
+                const html = dayTasks.map(t => {
+                    let isActive = false;
+                    let countdown = "";
 
-                let hasActiveOnce = false;
-                let activeTaskCount = 0;
-                let completedActiveCount = 0;
+                    if (t.type === 'once') {
+                        isActive = (date === t.targetDate);
+                        if (!isActive) countdown = `${Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000)}天后`;
+                    } else if (t.type === 'weekly') {
+                        isActive = (dayOfWeek === new Date(t.targetDate).getDay());
+                        if (!isActive) countdown = `${(new Date(t.targetDate).getDay() - dayOfWeek + 7) % 7}天后`;
+                    } else {
+                        isActive = true;
+                    }
 
-                container.innerHTML = dayTasks.map(t => {
-                    let isActive = false, countdown = "";
+                    const isDone = t.completedDates?.includes(date);
+                    
+                    // --- 统计数据 ---
+                    if (isActive) {
+                        activeTaskCount++;
+                        if (isDone) completedActiveCount++;
+                        if (t.type === 'once' && !isDone) hasActiveOnce = true;
+                    }
 
-                    if (t.type === 'once') {
-                        isActive = (date === t.targetDate);
-                        if (!isActive) countdown = `${Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000)}天后`;
-                    } else if (t.type === 'weekly') {
-                        isActive = (dayOfWeek === new Date(t.targetDate).getDay());
-                        if (!isActive) countdown = `${(new Date(t.targetDate).getDay() - dayOfWeek + 7) % 7}天后`;
-                    } else { isActive = true; }
+                    return `
+                        <div class="task-item ${!isActive ? 'task-disabled' : ''}" data-id="${t.id}">
+                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${isActive ? `toggleTask('${t.id}', '${date}')` : ''}">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm ${isDone ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">${t.text}</p>
+                                ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdown}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
 
-                    const isDone = t.completedDates?.includes(date);
-                    if (isActive) {
-                        activeTaskCount++;
-                        if (isDone) completedActiveCount++;
-                        if (t.type === 'once' && !isDone) hasActiveOnce = true;
-                    }
+                container.innerHTML = html;
 
-                    // 4. 一次性任务高亮
-                    const onceHighlight = (t.type === 'once' && isActive) ? 'task-highlight-once' : '';
+                // --- 颜色逻辑：勋章 > 红色 > 普通 ---
+                const isPerfect = activeTaskCount > 0 && activeTaskCount === completedActiveCount;
+                
+                let base = "header-future";
+                if (date < todayStr) base = "header-past";
+                else if (date === todayStr) base = "header-today";
 
-                    return `
-                        <div class="task-item ${!isActive ? 'task-disabled' : ''} ${onceHighlight}" data-id="${t.id}">
-                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" 
-                                 onclick="${(isActive && !isPastDate) ? `toggleTask('${t.id}', '${date}')` : ''}">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm ${isDone ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">${t.text}</p>
-                                ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdown}</span>` : ''}
-                            </div>
-                            ${(!isPastDate && isActive) ? `
-                                <button onclick="deleteTask('${t.id}', '${date}')" class="text-slate-300 px-2"><i class="fas fa-trash-can text-xs"></i></button>
-                            ` : ''}
-                        </div>
-                    `;
-                }).join('');
-
-                // 2. 长按排序功能初始化
-                if (!isPastDate && !container.dataset.sortable) {
-                    new Sortable(container, {
-                        delay: 350, // 长按 350ms 触发
-                        delayOnTouchOnly: true,
-                        animation: 150,
-                        ghostClass: 'sortable-ghost',
-                        onEnd: async () => {
-                            const batch = writeBatch(db);
-                            [...container.querySelectorAll('.task-item')].forEach((el, i) => {
-                                batch.update(doc(db, "users", currentUser.uid, "tasks", el.dataset.id), { order: i });
-                            });
-                            await batch.commit();
-                        }
-                    });
-                    container.dataset.sortable = "true";
-                }
-
-                // 颜色状态更新
-                const isPerfect = activeTaskCount > 0 && activeTaskCount === completedActiveCount;
-                let base = isPastDate ? "header-past" : (date === todayStr ? "header-today" : "header-future");
-                
-                if (isPerfect) header.className = `card-header header-perfect`;
-                else if (hasActiveOnce) header.className = `card-header header-critical`;
-                else header.className = `card-header ${base}`;
-            });
-        }
-    </script>
+                if (isPerfect) {
+                    header.className = `card-header header-perfect`;
+                } else if (hasActiveOnce) {
+                    header.className = `card-header header-critical`;
+                } else {
+                    header.className = `card-header ${base}`;
+                }
+            });
+        }
+    </script>
 </body>
 </html>
