@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>清单</title>
+    <title>智能清单 Pro - 成就勋章版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
@@ -22,51 +22,52 @@
         
         /* 状态颜色 */
         .card-header { padding: 20px; color: white; transition: all 0.5s ease; position: relative; }
-        .header-past { background: #cbd5e1; }
-        .header-today { background: #10b981; }
-        .header-future { background: #3b82f6; }
-        .header-critical { background: #ef4444 !important; }
+        .header-past { background: #cbd5e1; }    /* 过去：淡灰 */
+        .header-today { background: #10b981; }   /* 今天：绿色 */
+        .header-future { background: #3b82f6; }  /* 未来：蓝色 */
+        .header-critical { background: #ef4444 !important; } /* 一次性任务：红色 */
+        
+        /* --- 新增：暗金色完美达成样式 --- */
         .header-perfect { 
             background: linear-gradient(135deg, #a67c00 0%, #bf9b30 50%, #8a6d1c 100%) !important;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
         }
+        /* 金色纹理叠加层 */
         .header-perfect::after {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.15;
-            background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 8px 8px;
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.15;
+            background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
+            background-size: 8px 8px;
         }
 
         .task-item { 
             background: white; border-radius: 14px; margin-bottom: 10px; padding: 14px;
             display: flex; align-items: center; gap: 12px; border: 1px solid #f1f5f9;
-            transition: transform 0.2s; cursor: grab;
         }
-        .task-item:active { cursor: grabbing; }
-
-        /* 一次性任务强调样式 */
-        .once-highlight {
-            border-left: 5px solid #ef4444 !important;
-            background: #fff5f5;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
-            animation: pulse-red 2s infinite;
-        }
-        @keyframes pulse-red {
-            0% { border-left-color: #ef4444; }
-            50% { border-left-color: #fca5a5; }
-            100% { border-left-color: #ef4444; }
-        }
-
-        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none !important; background: #fcfcfc; border-style: dashed; }
         
-        .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        /* 4. 一次性任务强调样式 */
+        .task-once-highlight {
+            border: 2px solid #ef4444;
+            background: #fff5f5;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+        }
+
+        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; background: #fcfcfc; border-style: dashed; }
+        
+        .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .checkbox-custom.checked { background: #10b981; border-color: #10b981; }
         .checkbox-custom i { color: white; font-size: 10px; display: none; }
         .checkbox-custom.checked i { display: block; }
         
         #input-modal { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .fab.hidden-scale { transform: scale(0); pointer-events: none; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; }
+        .fab-disabled { background: #cbd5e1; box-shadow: none; }
 
         .jump-box { display: flex; align-items: center; background: #f1f5f9; padding: 6px 12px; border-radius: 10px; gap: 6px; }
         #jump-date { border: none; background: transparent; font-size: 12px; font-weight: 600; outline: none; width: 105px; }
+        
+        /* 拖拽时的样式 */
+        .sortable-ghost { opacity: 0.3; background: #e2e8f0; }
     </style>
 </head>
 <body>
@@ -97,13 +98,13 @@
         <div class="swiper mySwiper">
             <div class="swiper-wrapper" id="card-wrapper"></div>
         </div>
-        <button id="add-fab" onclick="openModal()" class="fab"><i class="fas fa-plus"></i></button>
+        <button id="add-btn" onclick="openModal()" class="fab"><i class="fas fa-plus"></i></button>
     </div>
 
     <div id="input-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
             <h3 class="text-xl font-bold mb-6 text-slate-800">新任务</h3>
-            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6 border-2 border-transparent focus:border-blue-500">
+            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6">
             <div class="flex gap-2 mb-8">
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="once" checked class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-red-500 peer-checked:text-white text-xs font-bold">一次性</div></label>
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="daily" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-green-600 peer-checked:text-white text-xs font-bold">每日</div></label>
@@ -146,10 +147,10 @@
         }
 
         window.login = () => signInWithPopup(auth, provider);
-        window.confirmLogout = () => confirm("确定要退出登录吗？") && signOut(auth).then(() => location.reload());
+        window.confirmLogout = () => confirm("确定退出？") && signOut(auth).then(() => location.reload());
         window.openModal = () => {
-            const activeDate = cardDates[swiper.activeIndex];
-            if(activeDate < todayStr) return; // 过去日期不允许添加
+            // 3. 过去的天数不允许添加任务
+            if (cardDates[swiper.activeIndex] < todayStr) return alert("过去的任务不可更改");
             document.getElementById('input-modal').style.display = 'flex';
         };
         window.closeModal = () => document.getElementById('input-modal').style.display = 'none';
@@ -174,7 +175,7 @@
                         <div class="text-[10px] opacity-70 font-bold tracking-widest uppercase text-center">${date === todayStr ? 'TODAY' : getDay(date)}</div>
                         <div class="text-xl font-bold text-center">${date}</div>
                     </div>
-                    <div id="list-${date}" class="task-list-container"></div>
+                    <div id="list-${date}" class="task-list-container flex-1 overflow-y-auto p-4"></div>
                 </div>
             `).join('');
 
@@ -182,22 +183,20 @@
                 effect: "coverflow", centeredSlides: true, slidesPerView: "auto",
                 initialSlide: cardDates.indexOf(todayStr),
                 coverflowEffect: { rotate: 0, depth: 100, modifier: 2.5 },
-                on: { slideChange: handleSlideChange }
+                on: { 
+                    slideChange: () => {
+                        renderAllCards();
+                        // 根据日期禁用/启用添加按钮
+                        const isPast = cardDates[swiper.activeIndex] < todayStr;
+                        document.getElementById('add-btn').className = `fab ${isPast ? 'fab-disabled' : ''}`;
+                    } 
+                }
             });
 
             onSnapshot(query(collection(db, "users", currentUser.uid, "tasks"), orderBy("order", "asc")), (snap) => {
                 allTasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderAllCards();
             });
-            handleSlideChange();
-        }
-
-        function handleSlideChange() {
-            const activeDate = cardDates[swiper.activeIndex];
-            const fab = document.getElementById('add-fab');
-            if(activeDate < todayStr) fab.classList.add('hidden-scale');
-            else fab.classList.remove('hidden-scale');
-            renderAllCards();
         }
 
         function getDay(d) { return new Date(d).toLocaleDateString('en-US', { weekday: 'short' }); }
@@ -206,7 +205,7 @@
             const text = document.getElementById('task-input').value;
             const type = document.querySelector('input[name="tType"]:checked').value;
             const date = cardDates[swiper.activeIndex];
-            if (!text || date < todayStr) return;
+            if (!text || date < todayStr) return; // 再次校验过去日期
             await addDoc(collection(db, "users", currentUser.uid, "tasks"), {
                 text, type, targetDate: date, completedDates: [], order: Date.now()
             });
@@ -214,7 +213,8 @@
         };
 
         window.toggleTask = async (id, date) => {
-            if(date < todayStr) return; // 锁定过去
+            // 3. 过去的天数不允许修改
+            if (date < todayStr) return;
             const task = allTasks.find(t => t.id === id);
             let dates = [...(task.completedDates || [])];
             const idx = dates.indexOf(date);
@@ -222,9 +222,10 @@
             await updateDoc(doc(db, "users", currentUser.uid, "tasks", id), { completedDates: dates });
         };
 
+        // 1. 添加删除任务功能
         window.deleteTask = async (id, date) => {
-            if(date < todayStr) return; // 锁定过去
-            if(confirm("确定删除此任务吗？")) {
+            if (date < todayStr) return;
+            if (confirm("确定删除此任务？")) {
                 await deleteDoc(doc(db, "users", currentUser.uid, "tasks", id));
             }
         };
@@ -241,16 +242,14 @@
                 let hasActiveOnce = false;
                 let activeTaskCount = 0;
                 let completedActiveCount = 0;
-                const isPast = date < todayStr;
+                const isPastDate = date < todayStr;
 
                 const html = dayTasks.map(t => {
                     let isActive = false;
                     let countdown = "";
-                    let isOnceDay = false;
 
                     if (t.type === 'once') {
                         isActive = (date === t.targetDate);
-                        isOnceDay = isActive;
                         if (!isActive) countdown = `${Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000)}天后`;
                     } else if (t.type === 'weekly') {
                         isActive = (dayOfWeek === new Date(t.targetDate).getDay());
@@ -260,24 +259,28 @@
                     }
 
                     const isDone = t.completedDates?.includes(date);
+                    
                     if (isActive) {
                         activeTaskCount++;
                         if (isDone) completedActiveCount++;
                         if (t.type === 'once' && !isDone) hasActiveOnce = true;
                     }
 
+                    // 4. 一次性任务强调类名
+                    const highlightClass = (t.type === 'once' && isActive) ? 'task-once-highlight' : '';
+
                     return `
-                        <div class="task-item ${!isActive || isPast ? 'task-disabled' : ''} ${isOnceDay ? 'once-highlight' : ''}" data-id="${t.id}">
-                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${(isActive && !isPast) ? `toggleTask('${t.id}', '${date}')` : ''}">
+                        <div class="task-item ${!isActive ? 'task-disabled' : ''} ${highlightClass}" data-id="${t.id}">
+                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${(isActive && !isPastDate) ? `toggleTask('${t.id}', '${date}')` : ''}">
                                 <i class="fas fa-check"></i>
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm ${isDone ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">${t.text}</p>
                                 ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdown}</span>` : ''}
                             </div>
-                            ${(!isPast && isActive) ? `
-                                <button onclick="deleteTask('${t.id}', '${date}')" class="text-slate-300 hover:text-red-400 p-1">
-                                    <i class="far fa-trash-alt text-xs"></i>
+                            ${(!isPastDate && isActive) ? `
+                                <button onclick="deleteTask('${t.id}', '${date}')" class="text-slate-300 hover:text-red-500 transition-colors">
+                                    <i class="fas fa-trash-can text-xs"></i>
                                 </button>
                             ` : ''}
                         </div>
@@ -286,27 +289,40 @@
 
                 container.innerHTML = html;
 
-                // 颜色逻辑
-                const isPerfect = activeTaskCount > 0 && activeTaskCount === completedActiveCount;
-                let base = isPast ? "header-past" : (date === todayStr ? "header-today" : "header-future");
-
-                if (isPerfect) header.className = `card-header header-perfect`;
-                else if (hasActiveOnce) header.className = `card-header header-critical`;
-                else header.className = `card-header ${base}`;
-
-                // 初始化或更新排序逻辑
-                if (!isPast) {
+                // 2. 初始化拖拽功能 (仅限今天和未来)
+                if (!isPastDate && !container.dataset.sortable) {
                     new Sortable(container, {
-                        animation: 150, delay: 200, delayOnTouchOnly: true,
+                        animation: 150,
+                        delay: 400, // 长按 400ms 后触发拖拽
+                        delayOnTouchOnly: true,
+                        ghostClass: 'sortable-ghost',
                         onEnd: async () => {
+                            const items = [...container.querySelectorAll('.task-item')];
                             const batch = writeBatch(db);
-                            Array.from(container.children).forEach((el, index) => {
-                                const tid = el.getAttribute('data-id');
-                                if(tid) batch.update(doc(db, "users", currentUser.uid, "tasks", tid), { order: index });
+                            items.forEach((el, index) => {
+                                const id = el.dataset.id;
+                                const ref = doc(db, "users", currentUser.uid, "tasks", id);
+                                batch.update(ref, { order: index });
                             });
                             await batch.commit();
                         }
                     });
+                    container.dataset.sortable = "true";
+                }
+
+                // --- 颜色逻辑：勋章 > 红色 > 普通 ---
+                const isPerfect = activeTaskCount > 0 && activeTaskCount === completedActiveCount;
+                
+                let base = "header-future";
+                if (date < todayStr) base = "header-past";
+                else if (date === todayStr) base = "header-today";
+
+                if (isPerfect) {
+                    header.className = `card-header header-perfect`;
+                } else if (hasActiveOnce) {
+                    header.className = `card-header header-critical`;
+                } else {
+                    header.className = `card-header ${base}`;
                 }
             });
         }
