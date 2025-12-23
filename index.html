@@ -22,29 +22,39 @@
         
         /* 状态颜色 */
         .card-header { padding: 20px; color: white; transition: all 0.5s ease; position: relative; }
-        .header-past { background: #cbd5e1; }    /* 过去：淡灰 */
-        .header-today { background: #10b981; }   /* 今天：绿色 */
-        .header-future { background: #3b82f6; }  /* 未来：蓝色 */
-        .header-critical { background: #ef4444 !important; } /* 一次性任务：红色 */
-        
-        /* --- 新增：暗金色完美达成样式 --- */
+        .header-past { background: #cbd5e1; }
+        .header-today { background: #10b981; }
+        .header-future { background: #3b82f6; }
+        .header-critical { background: #ef4444 !important; }
         .header-perfect { 
             background: linear-gradient(135deg, #a67c00 0%, #bf9b30 50%, #8a6d1c 100%) !important;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
         }
-        /* 金色纹理叠加层 */
         .header-perfect::after {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.15;
-            background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0);
-            background-size: 8px 8px;
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.15;
+            background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 8px 8px;
         }
 
         .task-item { 
             background: white; border-radius: 14px; margin-bottom: 10px; padding: 14px;
             display: flex; align-items: center; gap: 12px; border: 1px solid #f1f5f9;
+            transition: transform 0.2s; cursor: grab;
         }
-        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; background: #fcfcfc; border-style: dashed; }
+        .task-item:active { cursor: grabbing; }
+
+        /* 一次性任务强调样式 */
+        .once-highlight {
+            border-left: 5px solid #ef4444 !important;
+            background: #fff5f5;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { border-left-color: #ef4444; }
+            50% { border-left-color: #fca5a5; }
+            100% { border-left-color: #ef4444; }
+        }
+
+        .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none !important; background: #fcfcfc; border-style: dashed; }
         
         .checkbox-custom { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .checkbox-custom.checked { background: #10b981; border-color: #10b981; }
@@ -52,7 +62,8 @@
         .checkbox-custom.checked i { display: block; }
         
         #input-modal { display: none; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); }
-        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; }
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); z-index: 100; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .fab.hidden-scale { transform: scale(0); pointer-events: none; }
 
         .jump-box { display: flex; align-items: center; background: #f1f5f9; padding: 6px 12px; border-radius: 10px; gap: 6px; }
         #jump-date { border: none; background: transparent; font-size: 12px; font-weight: 600; outline: none; width: 105px; }
@@ -86,13 +97,13 @@
         <div class="swiper mySwiper">
             <div class="swiper-wrapper" id="card-wrapper"></div>
         </div>
-        <button onclick="openModal()" class="fab"><i class="fas fa-plus"></i></button>
+        <button id="add-fab" onclick="openModal()" class="fab"><i class="fas fa-plus"></i></button>
     </div>
 
     <div id="input-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
             <h3 class="text-xl font-bold mb-6 text-slate-800">新任务</h3>
-            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6">
+            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6 border-2 border-transparent focus:border-blue-500">
             <div class="flex gap-2 mb-8">
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="once" checked class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-red-500 peer-checked:text-white text-xs font-bold">一次性</div></label>
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="daily" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-green-600 peer-checked:text-white text-xs font-bold">每日</div></label>
@@ -135,8 +146,12 @@
         }
 
         window.login = () => signInWithPopup(auth, provider);
-        window.confirmLogout = () => confirm("确定退出？") && signOut(auth).then(() => location.reload());
-        window.openModal = () => document.getElementById('input-modal').style.display = 'flex';
+        window.confirmLogout = () => confirm("确定要退出登录吗？") && signOut(auth).then(() => location.reload());
+        window.openModal = () => {
+            const activeDate = cardDates[swiper.activeIndex];
+            if(activeDate < todayStr) return; // 过去日期不允许添加
+            document.getElementById('input-modal').style.display = 'flex';
+        };
         window.closeModal = () => document.getElementById('input-modal').style.display = 'none';
         window.jumpToDate = (val) => { const idx = cardDates.indexOf(val); if(idx !== -1) swiper.slideTo(idx); };
 
@@ -167,13 +182,22 @@
                 effect: "coverflow", centeredSlides: true, slidesPerView: "auto",
                 initialSlide: cardDates.indexOf(todayStr),
                 coverflowEffect: { rotate: 0, depth: 100, modifier: 2.5 },
-                on: { slideChange: renderAllCards }
+                on: { slideChange: handleSlideChange }
             });
 
             onSnapshot(query(collection(db, "users", currentUser.uid, "tasks"), orderBy("order", "asc")), (snap) => {
                 allTasks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderAllCards();
             });
+            handleSlideChange();
+        }
+
+        function handleSlideChange() {
+            const activeDate = cardDates[swiper.activeIndex];
+            const fab = document.getElementById('add-fab');
+            if(activeDate < todayStr) fab.classList.add('hidden-scale');
+            else fab.classList.remove('hidden-scale');
+            renderAllCards();
         }
 
         function getDay(d) { return new Date(d).toLocaleDateString('en-US', { weekday: 'short' }); }
@@ -182,7 +206,7 @@
             const text = document.getElementById('task-input').value;
             const type = document.querySelector('input[name="tType"]:checked').value;
             const date = cardDates[swiper.activeIndex];
-            if (!text) return;
+            if (!text || date < todayStr) return;
             await addDoc(collection(db, "users", currentUser.uid, "tasks"), {
                 text, type, targetDate: date, completedDates: [], order: Date.now()
             });
@@ -190,11 +214,19 @@
         };
 
         window.toggleTask = async (id, date) => {
+            if(date < todayStr) return; // 锁定过去
             const task = allTasks.find(t => t.id === id);
             let dates = [...(task.completedDates || [])];
             const idx = dates.indexOf(date);
             if (idx > -1) dates.splice(idx, 1); else dates.push(date);
             await updateDoc(doc(db, "users", currentUser.uid, "tasks", id), { completedDates: dates });
+        };
+
+        window.deleteTask = async (id, date) => {
+            if(date < todayStr) return; // 锁定过去
+            if(confirm("确定删除此任务吗？")) {
+                await deleteDoc(doc(db, "users", currentUser.uid, "tasks", id));
+            }
         };
 
         function renderAllCards() {
@@ -209,13 +241,16 @@
                 let hasActiveOnce = false;
                 let activeTaskCount = 0;
                 let completedActiveCount = 0;
+                const isPast = date < todayStr;
 
                 const html = dayTasks.map(t => {
                     let isActive = false;
                     let countdown = "";
+                    let isOnceDay = false;
 
                     if (t.type === 'once') {
                         isActive = (date === t.targetDate);
+                        isOnceDay = isActive;
                         if (!isActive) countdown = `${Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000)}天后`;
                     } else if (t.type === 'weekly') {
                         isActive = (dayOfWeek === new Date(t.targetDate).getDay());
@@ -225,8 +260,6 @@
                     }
 
                     const isDone = t.completedDates?.includes(date);
-                    
-                    // --- 统计数据 ---
                     if (isActive) {
                         activeTaskCount++;
                         if (isDone) completedActiveCount++;
@@ -234,33 +267,46 @@
                     }
 
                     return `
-                        <div class="task-item ${!isActive ? 'task-disabled' : ''}" data-id="${t.id}">
-                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${isActive ? `toggleTask('${t.id}', '${date}')` : ''}">
+                        <div class="task-item ${!isActive || isPast ? 'task-disabled' : ''} ${isOnceDay ? 'once-highlight' : ''}" data-id="${t.id}">
+                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${(isActive && !isPast) ? `toggleTask('${t.id}', '${date}')` : ''}">
                                 <i class="fas fa-check"></i>
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm ${isDone ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">${t.text}</p>
                                 ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdown}</span>` : ''}
                             </div>
+                            ${(!isPast && isActive) ? `
+                                <button onclick="deleteTask('${t.id}', '${date}')" class="text-slate-300 hover:text-red-400 p-1">
+                                    <i class="far fa-trash-alt text-xs"></i>
+                                </button>
+                            ` : ''}
                         </div>
                     `;
                 }).join('');
 
                 container.innerHTML = html;
 
-                // --- 颜色逻辑：勋章 > 红色 > 普通 ---
+                // 颜色逻辑
                 const isPerfect = activeTaskCount > 0 && activeTaskCount === completedActiveCount;
-                
-                let base = "header-future";
-                if (date < todayStr) base = "header-past";
-                else if (date === todayStr) base = "header-today";
+                let base = isPast ? "header-past" : (date === todayStr ? "header-today" : "header-future");
 
-                if (isPerfect) {
-                    header.className = `card-header header-perfect`;
-                } else if (hasActiveOnce) {
-                    header.className = `card-header header-critical`;
-                } else {
-                    header.className = `card-header ${base}`;
+                if (isPerfect) header.className = `card-header header-perfect`;
+                else if (hasActiveOnce) header.className = `card-header header-critical`;
+                else header.className = `card-header ${base}`;
+
+                // 初始化或更新排序逻辑
+                if (!isPast) {
+                    new Sortable(container, {
+                        animation: 150, delay: 200, delayOnTouchOnly: true,
+                        onEnd: async () => {
+                            const batch = writeBatch(db);
+                            Array.from(container.children).forEach((el, index) => {
+                                const tid = el.getAttribute('data-id');
+                                if(tid) batch.update(doc(db, "users", currentUser.uid, "tasks", tid), { order: index });
+                            });
+                            await batch.commit();
+                        }
+                    });
                 }
             });
         }
