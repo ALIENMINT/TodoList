@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>智能清单 Pro - 成就勋章版</title>
+    <title>智能清单 Pro - 区间任务版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
@@ -20,7 +20,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: all 0.4s; overflow: hidden; display: flex; flex-direction: column;
         }
         
-        .card-header { padding: 20px; color: white; transition: all 0.5s ease; position: relative; z-index: 10; }
+        .card-header { padding: 20px; color: white; transition: all 0.5s ease; position: relative; }
         .header-past { background: #cbd5e1; } 
         .header-today { background: #10b981; } 
         .header-future { background: #3b82f6; } 
@@ -37,25 +37,17 @@
             background-size: 8px 8px;
         }
 
-        .task-list-container { flex: 1; overflow-y: auto; padding: 15px; position: relative; }
-
-        /* 滑动删除容器 */
-        .task-row { position: relative; margin-bottom: 10px; border-radius: 14px; overflow: hidden; }
-        .delete-btn { 
-            position: absolute; right: 0; top: 0; height: 100%; width: 70px; 
-            background: #ef4444; color: white; display: flex; align-items: center; 
-            justify-content: center; font-size: 14px; font-weight: bold; z-index: 1;
-        }
+        .task-list-container { flex: 1; overflow-y: auto; padding: 15px; }
 
         .task-item { 
-            background: white; border-radius: 14px; padding: 14px;
+            background: white; border-radius: 14px; margin-bottom: 10px; padding: 14px;
             display: flex; align-items: center; gap: 12px; border: 1px solid #f1f5f9;
-            position: relative; z-index: 2; transition: transform 0.3s ease;
+            transition: transform 0.2s;
         }
 
-        /* 拖拽态样式 */
-        .sortable-ghost { opacity: 0.3; background: #e2e8f0; }
-        .sortable-drag { background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        /* 排序占位样式 */
+        .sortable-ghost { opacity: 0.2; background: #cbd5e1; }
+        .sortable-drag { background: #fff; box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
 
         .task-disabled { opacity: 0.45; filter: grayscale(0.8); pointer-events: none; background: #fcfcfc; border-style: dashed; }
         
@@ -86,6 +78,7 @@
                 <img id="user-avatar" src="" class="w-8 h-8 rounded-full">
                 <span id="user-name" class="text-xs font-bold text-slate-600 truncate max-w-[70px]">...</span>
             </div>
+            
             <div class="flex items-center gap-2">
                 <div class="jump-box">
                     <label for="jump-date" class="text-[10px] font-bold text-blue-600">跳转:</label>
@@ -103,8 +96,15 @@
 
     <div id="input-modal" class="fixed inset-0 z-[110] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl">
-            <h3 class="text-xl font-bold mb-6 text-slate-800">新任务</h3>
-            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-6">
+            <h3 class="text-xl font-bold mb-4 text-slate-800">新任务</h3>
+            <input type="text" id="task-input" placeholder="输入任务..." class="w-full bg-slate-50 p-4 rounded-2xl outline-none mb-4">
+            
+            <div class="mb-4">
+                <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase">截止日期 (可选)</label>
+                <input type="date" id="end-date-input" class="w-full bg-slate-50 p-3 rounded-xl outline-none text-sm font-semibold text-slate-600">
+                <p class="text-[9px] text-slate-400 mt-1">设置后任务将在该日期后自动消失</p>
+            </div>
+
             <div class="flex gap-2 mb-8">
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="once" checked class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-red-500 peer-checked:text-white text-xs font-bold">一次性</div></label>
                 <label class="flex-1 cursor-pointer"><input type="radio" name="tType" value="daily" class="hidden peer"><div class="text-center py-2 rounded-xl bg-slate-100 peer-checked:bg-green-600 peer-checked:text-white text-xs font-bold">每日</div></label>
@@ -192,13 +192,17 @@
 
         window.addTask = async () => {
             const text = document.getElementById('task-input').value;
+            const endDate = document.getElementById('end-date-input').value;
             const type = document.querySelector('input[name="tType"]:checked').value;
             const date = cardDates[swiper.activeIndex];
             if (!text) return;
+            
             await addDoc(collection(db, "users", currentUser.uid, "tasks"), {
-                text, type, targetDate: date, completedDates: [], order: Date.now()
+                text, type, targetDate: date, endDate: endDate || null, completedDates: [], order: Date.now()
             });
-            document.getElementById('task-input').value = ""; closeModal();
+            document.getElementById('task-input').value = ""; 
+            document.getElementById('end-date-input').value = ""; 
+            closeModal();
         };
 
         window.toggleTask = async (id, date) => {
@@ -209,40 +213,6 @@
             await updateDoc(doc(db, "users", currentUser.uid, "tasks", id), { completedDates: dates });
         };
 
-        // --- 新增：删除任务 ---
-        window.deleteTask = async (id) => {
-            if(confirm("确定删除该任务吗？")) {
-                await deleteDoc(doc(db, "users", currentUser.uid, "tasks", id));
-            }
-        };
-
-        // --- 核心：滑动交互控制 ---
-        function bindSlideEvents(row) {
-            let startX = 0;
-            const item = row.querySelector('.task-item');
-            
-            row.addEventListener('touchstart', e => {
-                startX = e.touches[0].clientX;
-            }, {passive: true});
-
-            row.addEventListener('touchmove', e => {
-                const moveX = e.touches[0].clientX - startX;
-                // 只允许向左滑动，最大 70px
-                if (moveX < 0 && moveX > -100) {
-                    item.style.transform = `translateX(${moveX}px)`;
-                }
-            }, {passive: true});
-
-            row.addEventListener('touchend', e => {
-                const moveX = e.changedTouches[0].clientX - startX;
-                if (moveX < -50) {
-                    item.style.transform = `translateX(-70px)`;
-                } else {
-                    item.style.transform = `translateX(0)`;
-                }
-            });
-        }
-
         function renderAllCards() {
             cardDates.forEach(date => {
                 const container = document.getElementById(`list-${date}`);
@@ -250,7 +220,20 @@
                 if (!container || !header) return;
 
                 const dayOfWeek = new Date(date).getDay();
-                const dayTasks = allTasks.filter(t => t.type === 'once' ? date <= t.targetDate : date >= t.targetDate);
+                
+                // --- 逻辑更新：过滤出在该日期有效且未超过 endDate 的任务 ---
+                const dayTasks = allTasks.filter(t => {
+                    // 必须在开始日期之后
+                    const startOk = date >= t.targetDate;
+                    // 如果设置了结束日期，必须在结束日期之前
+                    const endOk = !t.endDate || date <= t.endDate;
+                    
+                    if (t.type === 'once') {
+                        // 一次性任务：如果没过期，在 targetDate 之后都显示（直到完成或达到 endDate）
+                        return startOk && endOk;
+                    }
+                    return startOk && endOk;
+                });
 
                 let hasActiveOnce = false;
                 let activeTaskCount = 0;
@@ -259,13 +242,19 @@
                 container.innerHTML = dayTasks.map(t => {
                     let isActive = false;
                     let countdown = "";
+
                     if (t.type === 'once') {
                         isActive = (date === t.targetDate);
-                        if (!isActive) countdown = `${Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000)}天后`;
+                        if (!isActive) {
+                            const diff = Math.ceil((new Date(t.targetDate) - new Date(date)) / 86400000);
+                            if(diff > 0) countdown = `${diff}天后`;
+                        }
                     } else if (t.type === 'weekly') {
                         isActive = (dayOfWeek === new Date(t.targetDate).getDay());
                         if (!isActive) countdown = `${(new Date(t.targetDate).getDay() - dayOfWeek + 7) % 7}天后`;
-                    } else { isActive = true; }
+                    } else {
+                        isActive = true;
+                    }
 
                     const isDone = t.completedDates?.includes(date);
                     if (isActive) {
@@ -275,54 +264,51 @@
                     }
 
                     return `
-                        <div class="task-row" data-id="${t.id}">
-                            <div class="delete-btn" onclick="deleteTask('${t.id}')">删除</div>
-                            <div class="task-item ${!isActive ? 'task-disabled' : ''}">
-                                <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${isActive ? `toggleTask('${t.id}', '${date}')` : ''}">
-                                    <i class="fas fa-check"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm ${isDone ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">${t.text}</p>
-                                    ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdown}</span>` : ''}
-                                </div>
-                                <i class="fas fa-bars text-slate-300 text-xs"></i>
+                        <div class="task-item ${!isActive ? 'task-disabled' : ''}" data-id="${t.id}">
+                            <div class="checkbox-custom ${isDone ? 'checked' : ''}" onclick="${isActive ? `toggleTask('${t.id}', '${date}')` : ''}">
+                                <i class="fas fa-check"></i>
                             </div>
+                            <div class="flex-1">
+                                <p class="text-sm ${isDone ? 'line-through text-slate-300' : 'text-slate-800 font-semibold'}">${t.text}</p>
+                                ${!isActive ? `<span class="text-[10px] text-blue-500 font-black">${countdown}</span>` : ''}
+                            </div>
+                            <div class="text-slate-300 text-xs"><i class="fas fa-grip-lines"></i></div>
                         </div>
                     `;
                 }).join('');
 
-                // 绑定滑动
-                container.querySelectorAll('.task-row').forEach(bindSlideEvents);
-
-                // 初始化 Sortable (长按交换)
-                if (container && !container.sortable) {
+                // --- 2. 长按交换功能 (SortableJS) ---
+                if (!container.sortable) {
                     container.sortable = new Sortable(container, {
                         animation: 150,
-                        delay: 300, // 长按 300ms 触发
+                        delay: 300, // 重要：长按 300ms 触发，防止和切页冲突
                         delayOnTouchOnly: true,
                         ghostClass: 'sortable-ghost',
                         dragClass: 'sortable-drag',
-                        onStart: () => swiper.allowTouchMove = false, // 拖动时禁止切页
-                        onEnd: async (evt) => {
-                            swiper.allowTouchMove = true;
-                            if (evt.oldIndex === evt.newIndex) return;
-                            
+                        onStart: () => {
+                            if(swiper) swiper.allowTouchMove = false; // 拖动时禁止 Swiper 翻页
+                        },
+                        onEnd: async () => {
+                            if(swiper) swiper.allowTouchMove = true; // 结束后恢复
+                            const items = container.querySelectorAll('.task-item');
                             const batch = writeBatch(db);
-                            const rows = container.querySelectorAll('.task-row');
-                            rows.forEach((row, idx) => {
-                                const taskId = row.getAttribute('data-id');
-                                const ref = doc(db, "users", currentUser.uid, "tasks", taskId);
-                                batch.update(ref, { order: idx });
+                            items.forEach((el, index) => {
+                                const id = el.getAttribute('data-id');
+                                const ref = doc(db, "users", currentUser.uid, "tasks", id);
+                                batch.update(ref, { order: index });
                             });
                             await batch.commit();
                         }
                     });
                 }
 
-                // 勋章逻辑
+                // 勋章与颜色逻辑
                 const isPerfect = activeTaskCount > 0 && activeTaskCount === completedActiveCount;
                 let base = (date < todayStr) ? "header-past" : (date === todayStr ? "header-today" : "header-future");
-                header.className = `card-header ${isPerfect ? 'header-perfect' : (hasActiveOnce ? 'header-critical' : base)}`;
+
+                if (isPerfect) header.className = `card-header header-perfect`;
+                else if (hasActiveOnce) header.className = `card-header header-critical`;
+                else header.className = `card-header ${base}`;
             });
         }
     </script>
